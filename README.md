@@ -29,7 +29,7 @@ Using WallpaperSlideshow as a portable app does NOT require administrator access
 1. Download the zip file using the link above.
 2. Extract the contents.
 3. Move the contents to a permanent location of your choice. For example **C:\Tools\WallpaperSlideshow**.
-4. Double-click **WallpaperSlideshowUI.exe** to configure and start slideshow.
+4. Double-click **WallpaperSlideshowUI.exe** to configure and start the slideshow.
 5. In the SmartScreen window, click **More info** and then **Run anyway**.
 
 ## Summary
@@ -107,6 +107,7 @@ The /x option will kill the `wallpaperslideshow.exe` process.
 \
 \
 [![image](https://github.com/LesFerch/WinSetView/assets/79026235/63b7acbc-36ef-4578-b96a-d0b7ea0cba3a)](https://github.com/LesFerch/WallpaperSlideshow)
+
 
 
 
