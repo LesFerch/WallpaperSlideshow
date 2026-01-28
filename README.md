@@ -107,10 +107,11 @@ and so on...
 
 ### wallpaperslideshow /x
 
-The /x option will kill the `wallpaperslideshow.exe` process.
+The `/x` option will kill the `wallpaperslideshow.exe` process.
  
 \
 \
 [![image](https://github.com/LesFerch/WinSetView/assets/79026235/63b7acbc-36ef-4578-b96a-d0b7ea0cba3a)](https://github.com/LesFerch/WallpaperSlideshow)
+
 
 
