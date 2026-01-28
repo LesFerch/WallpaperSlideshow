@@ -28,7 +28,8 @@ namespace WallpaperSlideshow
                         "Where: folder1 = image folder for monitor 1\n" +
                         "Where: seconds1 = wait time between images for monitor 1 in seconds\n" +
                         "Settings are written to HKCU\\Software\\WallpaperSlideshow\n" +
-                        "If no arguments are provided, settings from the registry will be used.";
+                        "If no arguments are provided, settings from the registry will be used.\n" +
+                        "Stop slideshow: wallpaperslideshow /x";
 
         static Mutex mutex = new Mutex(true, "{6B63C8F3-18F1-4D57-87F0-B6281CE747FA}");
 
