@@ -97,13 +97,13 @@ folder1 = image folder for monitor 1\
 seconds1 = wait time between images for monitor 1 in seconds\
 and so on...
 
-Of course, unlike the GUI, folder paths that contain spaces must be quoted!
+- Of course, unlike the GUI, folder paths that contain spaces must be quoted!
 
-If a folder-wait pair is not provided for a connected monitor, it will use the settings for the first monitor.
+- If a folder-wait pair is not provided for a connected monitor, it will use the settings for the first monitor.
 
-Settings are written to HKCU\Software\WallpaperSlideshow
+- Settings are written to `HKCU\Software\WallpaperSlideshow`
 
-If no arguments are provided, settings from the registry will be used.
+- If no arguments are provided, settings from the registry will be used.
 
 ### wallpaperslideshow /x
 
@@ -112,4 +112,5 @@ The /x option will kill the `wallpaperslideshow.exe` process.
 \
 \
 [![image](https://github.com/LesFerch/WinSetView/assets/79026235/63b7acbc-36ef-4578-b96a-d0b7ea0cba3a)](https://github.com/LesFerch/WallpaperSlideshow)
+
 
