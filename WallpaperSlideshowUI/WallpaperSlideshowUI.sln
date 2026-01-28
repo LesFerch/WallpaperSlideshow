@@ -1,0 +1,25 @@
+﻿
+Microsoft Visual Studio Solution File, Format Version 12.00
+# Visual Studio Version 17
+VisualStudioVersion = 17.14.36908.2 d17.14
+MinimumVisualStudioVersion = 10.0.40219.1
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "WallpaperSlideshowUI", "WallpaperSlideshowUI.csproj", "{DBF3C23F-508F-446E-AF63-FBEBFB7ABB26}"
+EndProject
+Global
+	GlobalSection(SolutionConfigurationPlatforms) = preSolution
+		Debug|Any CPU = Debug|Any CPU
+		Release|Any CPU = Release|Any CPU
+	EndGlobalSection
+	GlobalSection(ProjectConfigurationPlatforms) = postSolution
+		{DBF3C23F-508F-446E-AF63-FBEBFB7ABB26}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{DBF3C23F-508F-446E-AF63-FBEBFB7ABB26}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{DBF3C23F-508F-446E-AF63-FBEBFB7ABB26}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{DBF3C23F-508F-446E-AF63-FBEBFB7ABB26}.Release|Any CPU.Build.0 = Release|Any CPU
+	EndGlobalSection
+	GlobalSection(SolutionProperties) = preSolution
+		HideSolutionNode = FALSE
+	EndGlobalSection
+	GlobalSection(ExtensibilityGlobals) = postSolution
+		SolutionGuid = {D0AB051A-F823-4614-8B36-D07D98C07955}
+	EndGlobalSection
+EndGlobal
