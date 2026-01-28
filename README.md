@@ -77,7 +77,7 @@ Dark:
 
 - To exclude a monitor from the slideshow, and be able to set its wallpaper manually (or using another program), set it to a folder that contains no images. An empty folder is a good choice in this case.
 
-- Click the stopwatch icon (⏱) to set a time in hours, minutes, seconds to wait between image changes. You can also click on the number and directly type in a value. The wait time is shown in seconds. The minimum is 1 and the maximum is 359999 (~ 100 hours).
+- Click the stopwatch icon (⏱) to set a time in hours, minutes, seconds to wait between image changes. You can also click on the number and directly type in a value in seconds. The wait time is shown in seconds. The minimum is 1 and the maximum is 359999 (~ 100 hours).
 
 - To have the slideshow run when you login, enable `Run at startup`.
 
@@ -107,6 +107,7 @@ The /x option will kill the `wallpaperslideshow.exe` process.
 \
 \
 [![image](https://github.com/LesFerch/WinSetView/assets/79026235/63b7acbc-36ef-4578-b96a-d0b7ea0cba3a)](https://github.com/LesFerch/WallpaperSlideshow)
+
 
 
 
