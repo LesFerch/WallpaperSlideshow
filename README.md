@@ -58,11 +58,13 @@ WallpaperSlideshow is meant to be simple and lightweight with support for comman
 Light:
 
 <img width="799" height="194" alt="image" src="https://github.com/user-attachments/assets/a1e967b6-9a50-44af-a9ce-51f98063313a" />
-
+\
+\
 Dark:
 
 <img width="801" height="196" alt="image" src="https://github.com/user-attachments/assets/6ed860d9-2cd4-4294-8d7c-0dab56289e34" />
-
+\
+\
 The settings for each monitor are displayed in a grid with monitor numbers that match the Windows `Display settings`.
 
 Click the folder icon (📁) to select an image folder for each monitor. You can also click on the text and directly type or paste a folder path. Do not include quotes.
@@ -101,6 +103,7 @@ The /x option will kill the `wallpaperslideshow.exe` process.
 \
 \
 [![image](https://github.com/LesFerch/WinSetView/assets/79026235/63b7acbc-36ef-4578-b96a-d0b7ea0cba3a)](https://github.com/LesFerch/WallpaperSlideshow)
+
 
 
 
