@@ -58,30 +58,34 @@ WallpaperSlideshow is meant to be simple and lightweight with support for comman
 Light:
 
 <img width="799" height="194" alt="image" src="https://github.com/user-attachments/assets/a1e967b6-9a50-44af-a9ce-51f98063313a" />
-\
+
+
+
 \
 Dark:
 
 <img width="801" height="196" alt="image" src="https://github.com/user-attachments/assets/6ed860d9-2cd4-4294-8d7c-0dab56289e34" />
-\
-\
-The settings for each monitor are displayed in a grid with monitor numbers that match the Windows `Display settings`.
 
-Click the folder icon (📁) to select an image folder for each monitor. You can also click on the text and directly type or paste a folder path. Do not include quotes.
 
-To have a single image displayed on a monitor, set it to a folder that contains that one image.
+### Interface
 
-To exclude a monitor from the slideshow, and be able to set its wallpaper manually (or using another program), set it to a folder that contains no images. An empty folder is a good choice in this case.
+- The settings for each monitor are displayed in a grid with monitor numbers that match the Windows `Display settings`.
 
-Click the stopwatch icon (⏱) to set a time in hours, minutes, seconds to wait between image changes. You can also click on the number and directly type in a value. The wait time is shown in seconds. The minimum is 1 and the maximum is 359999 (~ 100 hours).
+- Click the folder icon (📁) to select an image folder for each monitor. You can also click on the text and directly type or paste a folder path. Do not include quotes.
 
-To have the slideshow run when you login, enable `Run at startup`.
+- To have a single image displayed on a monitor, set it to a folder that contains that one image.
 
-To close the GUI without making any changes,  click the `X`.
+- To exclude a monitor from the slideshow, and be able to set its wallpaper manually (or using another program), set it to a folder that contains no images. An empty folder is a good choice in this case.
 
-To stop the slideshow (kill the WallpaperSlideshow.exe process), click `  Exit  `. 
+- Click the stopwatch icon (⏱) to set a time in hours, minutes, seconds to wait between image changes. You can also click on the number and directly type in a value. The wait time is shown in seconds. The minimum is 1 and the maximum is 359999 (~ 100 hours).
 
-Click the `  OK  ` button to run (or continue) the slideshow with your new settings. If an invalid folder path was entered, the GUI will remain on screen and the invalid path will be highlighted.
+- To have the slideshow run when you login, enable `Run at startup`.
+
+- To close the GUI without making any changes,  click the `X`.
+
+- To stop the slideshow (kill the WallpaperSlideshow.exe process), click `  Exit  `. 
+
+- Click the `  OK  ` button to run (or continue) the slideshow with your new settings. If an invalid folder path was entered, the GUI will remain on screen and the invalid path will be highlighted.
 
 **Note**: The monitor numbers are shown 1-based in the GUI, but are saved 0-based in the registry.
 
@@ -103,6 +107,7 @@ The /x option will kill the `wallpaperslideshow.exe` process.
 \
 \
 [![image](https://github.com/LesFerch/WinSetView/assets/79026235/63b7acbc-36ef-4578-b96a-d0b7ea0cba3a)](https://github.com/LesFerch/WallpaperSlideshow)
+
 
 
 
