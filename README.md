@@ -36,7 +36,7 @@ Using WallpaperSlideshow as a portable app does NOT require administrator access
 
 WallpaperSlideshow changes your wallpaper, like the built-in Windows slideshow, with the major difference being that a different image folder can be assigned to each monitor. This allows for images to be matched to the hardware (e.g. portrait vs landscape) or to have different sets of images shown on each display.
 
-If you only have only monitor, you may still find WallpaperSlideshow useful for its folder watch feature.
+If you only have one monitor, you may still find WallpaperSlideshow useful for its folder watch feature.
 
 Full feature list:
  
@@ -113,6 +113,7 @@ The `/x` option will kill the `wallpaperslideshow.exe` process.
 \
 \
 [![image](https://github.com/LesFerch/WinSetView/assets/79026235/63b7acbc-36ef-4578-b96a-d0b7ea0cba3a)](https://github.com/LesFerch/WallpaperSlideshow)
+
 
 
 
