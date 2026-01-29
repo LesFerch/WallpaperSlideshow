@@ -44,6 +44,7 @@ Full feature list:
  - The image wait time can be set individually for each monitor.
  - Wait times can range from 1 second to 100 hours.
  - Image folders are watched. New files get added to the slideshow. Deleted files are removed from the slideshow.
+ - The slideshow start image is randomly selected from the files in the image folder.
  - Any monitor can have a static image by pointing it to a folder with a single image.
  - Any monitor's wallpaper can be managed manually, or by another program, by pointing it to a folder with no images.
  - Keeps running when monitors are connected or disconnected.
@@ -112,6 +113,7 @@ The `/x` option will kill the `wallpaperslideshow.exe` process.
 \
 \
 [![image](https://github.com/LesFerch/WinSetView/assets/79026235/63b7acbc-36ef-4578-b96a-d0b7ea0cba3a)](https://github.com/LesFerch/WallpaperSlideshow)
+
 
 
 
