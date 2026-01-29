@@ -46,7 +46,7 @@ namespace WallpaperSlideshow
         {
             // Attach to parent console if launched from command line
             bool hasConsole = AttachConsole(ATTACH_PARENT_PROCESS);
-            
+
             if (args.Length == 1)
             {
                 string arg = args[0].ToLowerInvariant();
@@ -78,7 +78,7 @@ namespace WallpaperSlideshow
             if (!mutex.WaitOne(TimeSpan.Zero, true))
             {
                 ConWrite(sInstance);
-                return; 
+                return;
             }
 
             Application.EnableVisualStyles();
@@ -94,14 +94,14 @@ namespace WallpaperSlideshow
                 {
                     string folder = args[i];
                     if (!Directory.Exists(folder))
-                    { 
+                    {
                         ConWrite($"{sFolder}{folder}");
-                        return; 
+                        return;
                     }
 
                     if (!int.TryParse(args[i + 1], out int wait) || wait <= 0)
                     {
-                        ConWrite($"{sWait}{args[i + 1]}"); 
+                        ConWrite($"{sWait}{args[i + 1]}");
                         return;
                     }
 
@@ -144,10 +144,11 @@ namespace WallpaperSlideshow
         {
             Console.WriteLine($"\n\n{text}");
             SendKeys.SendWait("{ENTER}");
-        }   
+        }
 
         static void RunSlideshowLoop(IDesktopWallpaper handler, List<FolderWait> initialFolderWaits)
         {
+            Random random = new Random();
             List<FolderWait> folderWaits = initialFolderWaits ?? LoadFromRegistry();
             if (!AreFoldersValid(folderWaits))
             {
@@ -225,7 +226,13 @@ namespace WallpaperSlideshow
                         {
                             if (!Directory.Exists(folder)) continue;
                             monitorImages[monitorId] = Directory.GetFiles(folder).Where(IsImage).ToArray();
-                            monitorIndexes[monitorId] = 0;
+
+                            // Set random starting index when images are loaded
+                            if (monitorImages[monitorId].Length > 0)
+                            {
+                                monitorIndexes[monitorId] = random.Next(monitorImages[monitorId].Length);
+                            }
+
                             nextChangeTime[monitorId] = DateTime.Now;
                         }
 
