@@ -60,8 +60,6 @@ Light:
 
 <img width="799" height="194" alt="image" src="https://github.com/user-attachments/assets/a1e967b6-9a50-44af-a9ce-51f98063313a" />
 
-
-
 \
 Dark:
 
@@ -84,9 +82,9 @@ Dark:
 
 - To close the GUI without making any changes,  click the `X`.
 
-- To stop the slideshow (kill the WallpaperSlideshow.exe process), click `  Exit  `. 
+- To stop the slideshow (kill the WallpaperSlideshow.exe process), click `Exit`. 
 
-- Click the `  OK  ` button to run (or continue) the slideshow with your new settings. If an invalid folder path was entered, the GUI will remain on screen and the invalid path will be highlighted.
+- Click the `OK` button to run (or continue) the slideshow with your new settings. If an invalid folder path was entered, the GUI will remain on screen and the invalid path will be highlighted.
 
 **Note**: The monitor numbers are shown 1-based in the GUI, but are saved 0-based in the registry.
 
@@ -113,6 +111,7 @@ The `/x` option will kill the `wallpaperslideshow.exe` process.
 \
 \
 [![image](https://github.com/LesFerch/WinSetView/assets/79026235/63b7acbc-36ef-4578-b96a-d0b7ea0cba3a)](https://github.com/LesFerch/WallpaperSlideshow)
+
 
 
 
