@@ -1,6 +1,6 @@
 # WallpaperSlideshow
 
-### Version 1.0.1
+### Version 1.0.2
 
 Multi-monitor, multi-folder wallpaper slideshows. Command line or GUI.
 
@@ -10,7 +10,7 @@ Multi-monitor, multi-folder wallpaper slideshows. Command line or GUI.
 
 ### Install Using Setup Program
 
-[![image](https://github.com/user-attachments/assets/75e62417-c8ee-43b1-a8a8-a217ce130c91)Download the installer](https://github.com/LesFerch/WallpaperSlideshow/releases/download/1.0.1/WallpaperSlideshow-Setup.exe)
+[![image](https://github.com/user-attachments/assets/75e62417-c8ee-43b1-a8a8-a217ce130c91)Download the installer](https://github.com/LesFerch/WallpaperSlideshow/releases/download/1.0.2/WallpaperSlideshow-Setup.exe)
 
 The WallpaperSlideshow installer requires administrator access.
 
@@ -22,7 +22,7 @@ The WallpaperSlideshow installer requires administrator access.
 
 ### Portable Use
 
-[![image](https://github.com/LesFerch/WinSetView/assets/79026235/0188480f-ca53-45d5-b9ff-daafff32869e)Download the zip file](https://github.com/LesFerch/WallpaperSlideshow/releases/download/1.0.1/WallpaperSlideshow.zip)
+[![image](https://github.com/LesFerch/WinSetView/assets/79026235/0188480f-ca53-45d5-b9ff-daafff32869e)Download the zip file](https://github.com/LesFerch/WallpaperSlideshow/releases/download/1.0.2/WallpaperSlideshow.zip)
 
 Using WallpaperSlideshow as a portable app does NOT require administrator access.
 
@@ -111,6 +111,7 @@ The `/x` option will kill the `wallpaperslideshow.exe` process.
 \
 \
 [![image](https://github.com/LesFerch/WinSetView/assets/79026235/63b7acbc-36ef-4578-b96a-d0b7ea0cba3a)](https://github.com/LesFerch/WallpaperSlideshow)
+
 
 
 
