@@ -7,6 +7,7 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Diagnostics;
 using System.Windows.Forms;
+using System.Text;
 
 namespace WallpaperSlideshow
 {
@@ -32,6 +33,9 @@ namespace WallpaperSlideshow
                         "Stop slideshow: wallpaperslideshow /x";
 
         static Mutex mutex = new Mutex(true, "{6B63C8F3-18F1-4D57-87F0-B6281CE747FA}");
+
+        static string myPath = Path.GetDirectoryName(Application.ExecutablePath);
+        static bool Sync = false;
 
         [DllImport("kernel32.dll")]
         static extern bool AttachConsole(int dwProcessId);
@@ -80,6 +84,9 @@ namespace WallpaperSlideshow
                 ConWrite(sInstance);
                 return;
             }
+
+            string iniFile = Path.Combine(myPath, "WallpaperSlideshow.ini");
+            Sync = ReadString(iniFile, "General", "Sync", "").ToLower() == "true";
 
             Application.EnableVisualStyles();
             Application.SetCompatibleTextRenderingDefault(false);
@@ -145,6 +152,57 @@ namespace WallpaperSlideshow
             Console.WriteLine($"\n\n{text}");
             SendKeys.SendWait("{ENTER}");
         }
+
+        // INI file reading
+        static string ReadString(string iniFile, string section, string key, string defaultValue)
+        {
+            try
+            {
+                if (File.Exists(iniFile))
+                {
+                    return IniFileParser.ReadValue(section, key, defaultValue, iniFile);
+                }
+            }
+            catch { }
+
+            return defaultValue;
+        }
+
+        // INI file parser
+        public static class IniFileParser
+        {
+            public static string ReadValue(string section, string key, string defaultValue, string filePath)
+            {
+                try
+                {
+                    var lines = File.ReadAllLines(filePath, Encoding.UTF8);
+                    string currentSection = null;
+
+                    foreach (var line in lines)
+                    {
+                        string trimmedLine = line.Trim();
+
+                        if (trimmedLine.StartsWith("[") && trimmedLine.EndsWith("]"))
+                        {
+                            currentSection = trimmedLine.Substring(1, trimmedLine.Length - 2);
+                        }
+                        else if (currentSection == section)
+                        {
+                            var parts = trimmedLine.Split(new char[] { '=' }, 2);
+                            if (parts.Length == 2 && parts[0].Trim() == key)
+                            {
+                                return parts[1].Trim();
+                            }
+                        }
+                    }
+                }
+                catch (Exception)
+                {
+                }
+                return defaultValue;
+            }
+        }
+
 
         static void RunSlideshowLoop(IDesktopWallpaper handler, List<FolderWait> initialFolderWaits)
         {
@@ -227,10 +285,18 @@ namespace WallpaperSlideshow
                             if (!Directory.Exists(folder)) continue;
                             monitorImages[monitorId] = Directory.GetFiles(folder).Where(IsImage).ToArray();
 
-                            // Set random starting index when images are loaded
                             if (monitorImages[monitorId].Length > 0)
                             {
-                                monitorIndexes[monitorId] = random.Next(monitorImages[monitorId].Length);
+                                if (Sync)
+                                {
+                                    // For sync mode, use same starting image
+                                    monitorIndexes[monitorId] = 0;
+                                }
+                                else
+                                {
+                                    // Otherwise, set random starting image
+                                    monitorIndexes[monitorId] = random.Next(monitorImages[monitorId].Length);
+                                }
                             }
 
                             nextChangeTime[monitorId] = DateTime.Now;
