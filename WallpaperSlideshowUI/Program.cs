@@ -850,16 +850,58 @@ namespace WallpaperSlideshowUI
                 {
                     string currentFolder = grid.Rows[e.RowIndex].Cells["Folder"].Value?.ToString();
 
+                    // Save user's current "Expand to current folder" setting
+                    int userExpandSetting = 0;
+                    const string expandKeyPath = @"Software\Microsoft\Windows\CurrentVersion\Explorer\Advanced";
+                    const string expandValueName = "NavPaneExpandToCurrentFolder";
+                    
+                    try
+                    {
+                        using (var key = Registry.CurrentUser.OpenSubKey(expandKeyPath))
+                        {
+                            if (key != null)
+                            {
+                                object value = key.GetValue(expandValueName);
+                                if (value != null)
+                                {
+                                    userExpandSetting = (int)value;
+                                }
+                            }
+                        }
+                    }
+                    catch { }
+
+                    // Enable "Expand to current folder"
+                    try
+                    {
+                        using (var key = Registry.CurrentUser.CreateSubKey(expandKeyPath))
+                        {
+                            key.SetValue(expandValueName, 1, RegistryValueKind.DWord);
+                        }
+                    }
+                    catch { }
+
                     FolderPicker fd = new FolderPicker
                     {
                         Title = "", // This will display "Select Folder" in the current OS language
                         InputPath = !string.IsNullOrEmpty(currentFolder) && System.IO.Directory.Exists(currentFolder) ? currentFolder : "",
                         Multiselect = false
                     };
+
                     if (fd.ShowDialog(IntPtr.Zero) == true && !string.IsNullOrEmpty(fd.ResultPath))
                     {
                         grid.Rows[e.RowIndex].Cells["Folder"].Value = fd.ResultPath;
                     }
+
+                    // Restore user's original "Expand to current folder" setting
+                    try
+                    {
+                        using (var key = Registry.CurrentUser.CreateSubKey(expandKeyPath))
+                        {
+                            key.SetValue(expandValueName, userExpandSetting, RegistryValueKind.DWord);
+                        }
+                    }
+                    catch { }
                 }
                 else if (e.ColumnIndex == grid.Columns["TimePicker"].Index && e.RowIndex >= 0)
                 {
