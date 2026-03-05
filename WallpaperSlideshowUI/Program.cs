@@ -1190,7 +1190,8 @@ namespace WallpaperSlideshowUI
             {
                 SetStyle(ControlStyles.UserPaint | ControlStyles.AllPaintingInWmPaint |
                          ControlStyles.OptimizedDoubleBuffer | ControlStyles.ResizeRedraw, true);
-                this.Size = new Size(44, 22);
+                float scale = ScaleFactor;
+                this.Size = new Size((int)(44 * scale), (int)(20 * scale));
 
                 _animationTimer = new System.Windows.Forms.Timer();
                 _animationTimer.Interval = 15;
@@ -1277,7 +1278,7 @@ namespace WallpaperSlideshowUI
                 int thumbSize = trackHeight - 8; // Smaller by 4 pixels for more visible background
                 int thumbMaxX = trackWidth - thumbSize - 8; // 4 pixels padding on each side
                 int thumbX = (int)(4 + thumbMaxX * _animationProgress);
-                int thumbY = 4;
+                int thumbY = 5;
 
                 // Draw thumb (circle with shadow)
                 Rectangle thumbRect = new Rectangle(thumbX, thumbY, thumbSize, thumbSize);
