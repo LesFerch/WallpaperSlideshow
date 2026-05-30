@@ -1,6 +1,6 @@
 # WallpaperSlideshow
 
-### Version 1.0.4
+### Version 1.1.0
 
 Multi-monitor, multi-folder wallpaper slideshows. Command line or GUI.
 
@@ -10,7 +10,7 @@ Multi-monitor, multi-folder wallpaper slideshows. Command line or GUI.
 
 ### Install Using Setup Program
 
-[![image](https://github.com/user-attachments/assets/75e62417-c8ee-43b1-a8a8-a217ce130c91)Download the installer](https://github.com/LesFerch/WallpaperSlideshow/releases/download/1.0.4/WallpaperSlideshow-Setup.exe)
+[![image](https://github.com/user-attachments/assets/75e62417-c8ee-43b1-a8a8-a217ce130c91)Download the installer](https://github.com/LesFerch/WallpaperSlideshow/releases/download/1.1.0/WallpaperSlideshow-Setup.exe)
 
 The WallpaperSlideshow installer requires administrator access.
 
@@ -22,7 +22,7 @@ The WallpaperSlideshow installer requires administrator access.
 
 ### Portable Use
 
-[![image](https://github.com/LesFerch/WinSetView/assets/79026235/0188480f-ca53-45d5-b9ff-daafff32869e)Download the zip file](https://github.com/LesFerch/WallpaperSlideshow/releases/download/1.0.4/WallpaperSlideshow.zip)
+[![image](https://github.com/LesFerch/WinSetView/assets/79026235/0188480f-ca53-45d5-b9ff-daafff32869e)Download the zip file](https://github.com/LesFerch/WallpaperSlideshow/releases/download/1.1.0/WallpaperSlideshow.zip)
 
 Using WallpaperSlideshow as a portable app does NOT require administrator access.
 
@@ -49,6 +49,7 @@ Full feature list:
  - Any monitor's wallpaper can be managed manually, or by another program, by pointing it to a folder with no images.
  - Keeps running when monitors are connected or disconnected.
  - Survives an Explorer restart.
+ - Continues from where it left off.
 
 WallpaperSlideshow is meant to be simple and lightweight with support for command line operation and a simple GUI. The CPU and memory footprint is very small. It is not meant to compete with big programs like Wallpaper Engine.
 
