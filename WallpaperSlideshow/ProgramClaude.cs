@@ -215,6 +215,7 @@ namespace WallpaperSlideshow
             }
 
             Dictionary<string, int> monitorIndexes = new Dictionary<string, int>();
+            Dictionary<string, int> monitorCurrentIndexes = new Dictionary<string, int>();
             Dictionary<string, string[]> monitorImages = new Dictionary<string, string[]>();
             Dictionary<string, int> monitorWaits = new Dictionary<string, int>();
             Dictionary<string, DateTime> nextChangeTime = new Dictionary<string, DateTime>();
@@ -227,6 +228,7 @@ namespace WallpaperSlideshow
 
             List<FolderWait> lastFolderWaits = new List<FolderWait>(folderWaits);
             DateTime lastGcTime = DateTime.Now;
+            DateTime lastLoopTime = DateTime.Now;
 
             while (true)
             {
@@ -243,6 +245,17 @@ namespace WallpaperSlideshow
                     }
 
                     bool folderWaitsChanged = false;
+                    bool forceWallpaperChange = false;
+
+                    // Wake-from-sleep detection: if more than 3 seconds elapsed, system likely resumed from sleep
+                    DateTime currentLoopTime = DateTime.Now;
+                    double elapsedSeconds = (currentLoopTime - lastLoopTime).TotalSeconds;
+                    if (elapsedSeconds > 3)
+                    {
+                        forceWallpaperChange = true;
+                    }
+                    lastLoopTime = currentLoopTime;
+
                     List<FolderWait> newFolderWaits = LoadFromRegistry();
                     if (!FolderWaitsEqual(lastFolderWaits, newFolderWaits) && AreFoldersValid(newFolderWaits))
                     {
@@ -260,19 +273,39 @@ namespace WallpaperSlideshow
                         string monitorId;
                         handler.GetMonitorDevicePathAt(i, out monitorId);
 
-                        // Skip monitors with invalid/empty MonitorIDs (phantom monitors)
-                        if (string.IsNullOrEmpty(monitorId))
+                        // Verify monitor is actually active by checking its rectangle
+                        // Phantom/disconnected monitors may still appear in the list but have invalid rectangles
+                        bool isValidMonitor = false;
+                        try
+                        {
+                            Rect rect = handler.GetMonitorRECT(monitorId);
+                            // Valid monitor should have non-zero width and height
+                            if (rect.Right > rect.Left && rect.Bottom > rect.Top)
+                            {
+                                isValidMonitor = true;
+                            }
+                        }
+                        catch
+                        {
+                            // If we can't get the rectangle, monitor is likely invalid
+                            isValidMonitor = false;
+                        }
+
+                        // Skip phantom/invalid monitors
+                        if (!isValidMonitor)
                         {
                             continue;
                         }
 
                         currentMonitors.Add(monitorId);
 
+                        // Assign folder based on monitor enumeration index
                         int idx = (int)i < folderWaits.Count ? (int)i : 0;
+                        monitorFolderIndexes[monitorId] = idx;
+
                         string folder = folderWaits[idx].Folder;
                         int wait = folderWaits[idx].Wait;
 
-                        monitorFolderIndexes[monitorId] = idx; // Track which folder index this monitor uses
                         activeFolders.Add(folder); // Track folders currently assigned to monitors
                         monitorWaits[monitorId] = wait;
 
@@ -296,32 +329,67 @@ namespace WallpaperSlideshow
 
                             if (monitorImages[monitorId].Length > 0)
                             {
-                                int startIdx;
-
-                                // Try to load the saved index from registry
-                                int savedIdx = LoadImageIndexFromRegistry(idx, -1);
-
-                                if (savedIdx >= 0 && savedIdx < monitorImages[monitorId].Length)
+                                // If this is a new monitor (first time setup), initialize the wallpaper
+                                if (!monitorCurrentIndexes.ContainsKey(monitorId))
                                 {
-                                    // Use saved index if valid
-                                    startIdx = savedIdx;
-                                }
-                                else if (Sync)
-                                {
-                                    // For sync mode, use same starting image
-                                    startIdx = 0;
+                                    int startIdx;
+
+                                    // Try to load the saved index from registry
+                                    int savedIdx = LoadImageIndexFromRegistry(idx, -1);
+
+                                    if (savedIdx >= 0 && savedIdx < monitorImages[monitorId].Length)
+                                    {
+                                        // Use saved index if valid
+                                        startIdx = savedIdx;
+                                    }
+                                    else if (Sync)
+                                    {
+                                        // For sync mode, use same starting image
+                                        startIdx = 0;
+                                    }
+                                    else
+                                    {
+                                        // Otherwise, set random starting image
+                                        startIdx = random.Next(monitorImages[monitorId].Length);
+                                    }
+
+                                    // Set the initial wallpaper immediately
+                                    if (File.Exists(monitorImages[monitorId][startIdx]))
+                                    {
+                                        try 
+                                        { 
+                                            handler.SetWallpaper(monitorId, monitorImages[monitorId][startIdx]);
+                                            monitorCurrentIndexes[monitorId] = startIdx;
+                                            SaveImageIndexToRegistry(idx, startIdx);
+                                        }
+                                        catch { }
+                                    }
+
+                                    // Next image to show
+                                    monitorIndexes[monitorId] = (startIdx + 1) % monitorImages[monitorId].Length;
                                 }
                                 else
                                 {
-                                    // Otherwise, set random starting image
-                                    startIdx = random.Next(monitorImages[monitorId].Length);
-                                }
+                                    // Monitor already exists - preserve current index if possible
+                                    int currentIdx = monitorCurrentIndexes[monitorId];
 
-                                monitorIndexes[monitorId] = startIdx;
-                                SaveImageIndexToRegistry(idx, startIdx);
+                                    // If current index is out of bounds (folder contents changed), reset to 0
+                                    if (currentIdx >= monitorImages[monitorId].Length)
+                                    {
+                                        currentIdx = 0;
+                                        monitorCurrentIndexes[monitorId] = 0;
+                                        monitorIndexes[monitorId] = 1 % monitorImages[monitorId].Length;
+                                        SaveImageIndexToRegistry(idx, 0);
+                                    }
+                                    else
+                                    {
+                                        // Keep current index, just update next index
+                                        monitorIndexes[monitorId] = (currentIdx + 1) % monitorImages[monitorId].Length;
+                                    }
+                                }
                             }
 
-                            nextChangeTime[monitorId] = DateTime.Now;
+                            nextChangeTime[monitorId] = DateTime.Now.AddSeconds(wait);
                         }
 
                         // Initialize index and nextChangeTime for new monitors
@@ -387,6 +455,61 @@ namespace WallpaperSlideshow
                     }
 
                     DateTime now = DateTime.Now;
+
+                    // If wake-from-sleep detected, immediately reload current wallpapers to correct any Windows 11 issues
+                    if (forceWallpaperChange)
+                    {
+                        foreach (var monitorId in currentMonitors)
+                        {
+                            if (monitorImages.ContainsKey(monitorId) && monitorCurrentIndexes.ContainsKey(monitorId))
+                            {
+                                string[] images = monitorImages[monitorId];
+                                if (images.Length > 0)
+                                {
+                                    // Check if the scheduled change time has already passed
+                                    bool shouldAdvanceToNext = nextChangeTime.ContainsKey(monitorId) && now >= nextChangeTime[monitorId];
+
+                                    if (shouldAdvanceToNext)
+                                    {
+                                        // Time for next image has passed - advance to next image
+                                        int nextIdx = monitorIndexes[monitorId];
+                                        if (File.Exists(images[nextIdx]))
+                                        {
+                                            try 
+                                            { 
+                                                handler.SetWallpaper(monitorId, images[nextIdx]); 
+                                                monitorCurrentIndexes[monitorId] = nextIdx;
+                                                if (monitorFolderIndexes.ContainsKey(monitorId))
+                                                {
+                                                    SaveImageIndexToRegistry(monitorFolderIndexes[monitorId], nextIdx);
+                                                }
+                                            }
+                                            catch { }
+                                        }
+                                        monitorIndexes[monitorId] = (nextIdx + 1) % images.Length;
+
+                                        // Set next change time
+                                        if (monitorWaits.ContainsKey(monitorId))
+                                        {
+                                            nextChangeTime[monitorId] = now.AddSeconds(monitorWaits[monitorId]);
+                                        }
+                                    }
+                                    else
+                                    {
+                                        // Timer hasn't expired - just reload current image
+                                        int currentIdx = monitorCurrentIndexes[monitorId];
+                                        if (File.Exists(images[currentIdx]))
+                                        {
+                                            try { handler.SetWallpaper(monitorId, images[currentIdx]); }
+                                            catch { }
+                                        }
+                                        // Don't reset the timer - keep the original schedule
+                                    }
+                                }
+                            }
+                        }
+                    }
+
                     foreach (var monitorId in currentMonitors)
                     {
                         if (!nextChangeTime.ContainsKey(monitorId) || !monitorImages.ContainsKey(monitorId))
@@ -403,6 +526,7 @@ namespace WallpaperSlideshow
                                     try 
                                     { 
                                         handler.SetWallpaper(monitorId, images[idxNext]);
+                                        monitorCurrentIndexes[monitorId] = idxNext;
                                         if (monitorFolderIndexes.ContainsKey(monitorId))
                                         {
                                             SaveImageIndexToRegistry(monitorFolderIndexes[monitorId], idxNext);
@@ -422,6 +546,7 @@ namespace WallpaperSlideshow
                         if (!currentMonitors.Contains(key))
                         {
                             monitorIndexes.Remove(key);
+                            monitorCurrentIndexes.Remove(key);
                             monitorImages.Remove(key);
                             monitorWaits.Remove(key);
                             nextChangeTime.Remove(key);

@@ -59,6 +59,7 @@
   </ItemGroup>
   <ItemGroup>
     <None Include="App.config" />
+    <None Include="Check-MonitorInfo.ps1" />
   </ItemGroup>
   <ItemGroup>
     <Content Include="WallpaperSlideshow.ico" />

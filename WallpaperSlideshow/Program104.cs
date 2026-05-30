@@ -218,7 +218,6 @@ namespace WallpaperSlideshow
             Dictionary<string, string[]> monitorImages = new Dictionary<string, string[]>();
             Dictionary<string, int> monitorWaits = new Dictionary<string, int>();
             Dictionary<string, DateTime> nextChangeTime = new Dictionary<string, DateTime>();
-            Dictionary<string, int> monitorFolderIndexes = new Dictionary<string, int>(); // Track which folder enumeration index each monitor uses
 
             // FileSystemWatcher tracking
             Dictionary<string, FileSystemWatcher> folderWatchers = new Dictionary<string, FileSystemWatcher>();
@@ -259,20 +258,12 @@ namespace WallpaperSlideshow
                     {
                         string monitorId;
                         handler.GetMonitorDevicePathAt(i, out monitorId);
-
-                        // Skip monitors with invalid/empty MonitorIDs (phantom monitors)
-                        if (string.IsNullOrEmpty(monitorId))
-                        {
-                            continue;
-                        }
-
                         currentMonitors.Add(monitorId);
 
                         int idx = (int)i < folderWaits.Count ? (int)i : 0;
                         string folder = folderWaits[idx].Folder;
                         int wait = folderWaits[idx].Wait;
 
-                        monitorFolderIndexes[monitorId] = idx; // Track which folder index this monitor uses
                         activeFolders.Add(folder); // Track folders currently assigned to monitors
                         monitorWaits[monitorId] = wait;
 
@@ -296,29 +287,16 @@ namespace WallpaperSlideshow
 
                             if (monitorImages[monitorId].Length > 0)
                             {
-                                int startIdx;
-
-                                // Try to load the saved index from registry
-                                int savedIdx = LoadImageIndexFromRegistry(idx, -1);
-
-                                if (savedIdx >= 0 && savedIdx < monitorImages[monitorId].Length)
-                                {
-                                    // Use saved index if valid
-                                    startIdx = savedIdx;
-                                }
-                                else if (Sync)
+                                if (Sync)
                                 {
                                     // For sync mode, use same starting image
-                                    startIdx = 0;
+                                    monitorIndexes[monitorId] = 0;
                                 }
                                 else
                                 {
                                     // Otherwise, set random starting image
-                                    startIdx = random.Next(monitorImages[monitorId].Length);
+                                    monitorIndexes[monitorId] = random.Next(monitorImages[monitorId].Length);
                                 }
-
-                                monitorIndexes[monitorId] = startIdx;
-                                SaveImageIndexToRegistry(idx, startIdx);
                             }
 
                             nextChangeTime[monitorId] = DateTime.Now;
@@ -400,14 +378,7 @@ namespace WallpaperSlideshow
                                 int idxNext = monitorIndexes[monitorId];
                                 if (File.Exists(images[idxNext]))
                                 {
-                                    try 
-                                    { 
-                                        handler.SetWallpaper(monitorId, images[idxNext]);
-                                        if (monitorFolderIndexes.ContainsKey(monitorId))
-                                        {
-                                            SaveImageIndexToRegistry(monitorFolderIndexes[monitorId], idxNext);
-                                        }
-                                    }
+                                    try { handler.SetWallpaper(monitorId, images[idxNext]); }
                                     catch { }
                                 }
                                 monitorIndexes[monitorId] = (idxNext + 1) % images.Length;
@@ -425,7 +396,6 @@ namespace WallpaperSlideshow
                             monitorImages.Remove(key);
                             monitorWaits.Remove(key);
                             nextChangeTime.Remove(key);
-                            monitorFolderIndexes.Remove(key);
                         }
                     }
                 }
@@ -514,43 +484,6 @@ namespace WallpaperSlideshow
                 }
             }
             return result;
-        }
-
-        static void SaveImageIndexToRegistry(int folderIndex, int imageIndex)
-        {
-            try
-            {
-                using (RegistryKey baseKey = Registry.CurrentUser.CreateSubKey(@"Software\WallpaperSlideshow"))
-                {
-                    using (RegistryKey subKey = baseKey.CreateSubKey(folderIndex.ToString()))
-                    {
-                        subKey.SetValue("CurrentImageIndex", imageIndex, RegistryValueKind.DWord);
-                    }
-                }
-            }
-            catch { }
-        }
-
-        static int LoadImageIndexFromRegistry(int folderIndex, int defaultIndex)
-        {
-            try
-            {
-                using (RegistryKey baseKey = Registry.CurrentUser.OpenSubKey(@"Software\WallpaperSlideshow"))
-                {
-                    if (baseKey == null) return defaultIndex;
-                    using (RegistryKey subKey = baseKey.OpenSubKey(folderIndex.ToString()))
-                    {
-                        if (subKey == null) return defaultIndex;
-                        object value = subKey.GetValue("CurrentImageIndex");
-                        if (value != null)
-                        {
-                            return (int)value;
-                        }
-                    }
-                }
-            }
-            catch { }
-            return defaultIndex;
         }
     }
 
