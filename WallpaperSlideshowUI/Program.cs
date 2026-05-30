@@ -743,6 +743,7 @@ namespace WallpaperSlideshowUI
                 }
 
                 SaveSettings();
+                KillAllWallpaperSlideshowInstances();
                 StartWallpaperSlideshowIfNotRunning();
                 this.Close();
             }
@@ -829,6 +830,7 @@ namespace WallpaperSlideshowUI
                     try
                     {
                         process.Kill();
+                        process.WaitForExit(1000);
                     }
                     catch
                     {
