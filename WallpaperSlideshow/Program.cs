@@ -56,13 +56,13 @@ namespace WallpaperSlideshow
                 string arg = args[0].ToLowerInvariant();
                 if (arg == "/kill" || arg == "/stop" || arg == "/exit" || arg == "/quit" || arg == "/x")
                 {
-                    ConWrite(sStop);
+                    ConWrite(sStop, hasConsole);
                     KillAllInstances();
                     return;
                 }
                 if (arg == "/help" || arg == "/?")
                 {
-                    ConWrite(sHelp);
+                    ConWrite(sHelp, hasConsole);
                     return;
                 }
             }
@@ -74,14 +74,14 @@ namespace WallpaperSlideshow
 
             if (Version.Parse(NTVer) < new Version("6.2"))
             {
-                ConWrite(sRequires);
+                ConWrite(sRequires, hasConsole);
                 return;
             }
 
             // Ensure only one instance runs at a time
             if (!mutex.WaitOne(TimeSpan.Zero, true))
             {
-                ConWrite(sInstance);
+                ConWrite(sInstance, hasConsole);
                 return;
             }
 
@@ -102,13 +102,13 @@ namespace WallpaperSlideshow
                     string folder = args[i];
                     if (!Directory.Exists(folder))
                     {
-                        ConWrite($"{sFolder}{folder}");
+                        ConWrite($"{sFolder}{folder}", hasConsole);
                         return;
                     }
 
                     if (!int.TryParse(args[i + 1], out int wait) || wait <= 0)
                     {
-                        ConWrite($"{sWait}{args[i + 1]}");
+                        ConWrite($"{sWait}{args[i + 1]}", hasConsole);
                         return;
                     }
 
@@ -147,10 +147,13 @@ namespace WallpaperSlideshow
             RunSlideshowLoop(handler, folderWaits);
         }
 
-        static void ConWrite(string text)
+        static void ConWrite(string text, bool hasConsole = false)
         {
-            Console.WriteLine($"\n\n{text}");
-            SendKeys.SendWait("{ENTER}");
+            if (hasConsole)
+            {
+                Console.WriteLine($"\n\n{text}");
+                SendKeys.SendWait("{ENTER}");
+            }
         }
 
         // INI file reading
@@ -227,6 +230,7 @@ namespace WallpaperSlideshow
 
             List<FolderWait> lastFolderWaits = new List<FolderWait>(folderWaits);
             DateTime lastGcTime = DateTime.Now;
+            DateTime lastLoopTime = DateTime.Now;
 
             while (true)
             {
@@ -243,6 +247,18 @@ namespace WallpaperSlideshow
                     }
 
                     bool folderWaitsChanged = false;
+
+                    // Wake-from-sleep detection: if more than 3 seconds elapsed, system likely resumed from sleep
+                    DateTime currentLoopTime = DateTime.Now;
+                    bool wakeFromSleep = (currentLoopTime - lastLoopTime).TotalSeconds > 3;
+                    lastLoopTime = currentLoopTime;
+
+                    if (wakeFromSleep)
+                    {
+                        // Wait 2 seconds for all monitors to come back on before doing anything
+                        Thread.Sleep(2000);
+                    }
+
                     List<FolderWait> newFolderWaits = LoadFromRegistry();
                     if (!FolderWaitsEqual(lastFolderWaits, newFolderWaits) && AreFoldersValid(newFolderWaits))
                     {
@@ -317,11 +333,20 @@ namespace WallpaperSlideshow
                                     startIdx = random.Next(monitorImages[monitorId].Length);
                                 }
 
-                                monitorIndexes[monitorId] = startIdx;
+                                // Immediately apply the saved wallpaper, then queue the next image
+                                if (File.Exists(monitorImages[monitorId][startIdx]))
+                                {
+                                    try { handler.SetWallpaper(monitorId, monitorImages[monitorId][startIdx]); }
+                                    catch { }
+                                }
+                                monitorIndexes[monitorId] = (startIdx + 1) % monitorImages[monitorId].Length;
                                 SaveImageIndexToRegistry(idx, startIdx);
                             }
 
-                            nextChangeTime[monitorId] = DateTime.Now;
+                            // Restore saved next change time, clamped so it is never more than one full wait period from now
+                            DateTime savedNextChange = LoadNextChangeTimeFromRegistry(idx, DateTime.Now.AddSeconds(wait));
+                            DateTime maxNextChange = DateTime.Now.AddSeconds(wait);
+                            nextChangeTime[monitorId] = savedNextChange < maxNextChange ? savedNextChange : maxNextChange;
                         }
 
                         // Initialize index and nextChangeTime for new monitors
@@ -387,6 +412,26 @@ namespace WallpaperSlideshow
                     }
 
                     DateTime now = DateTime.Now;
+
+                    // On wake from sleep, immediately re-apply the current wallpaper to all monitors
+                    if (wakeFromSleep)
+                    {
+                        foreach (var monitorId in currentMonitors)
+                        {
+                            if (!monitorImages.ContainsKey(monitorId) || !monitorIndexes.ContainsKey(monitorId))
+                                continue;
+
+                            string[] images = monitorImages[monitorId];
+                            // monitorIndexes holds the *next* image to show, so step back one to get the current
+                            int currentIdx = (monitorIndexes[monitorId] - 1 + images.Length) % images.Length;
+                            if (images.Length > 0 && File.Exists(images[currentIdx]))
+                            {
+                                try { handler.SetWallpaper(monitorId, images[currentIdx]); }
+                                catch { }
+                            }
+                        }
+                    }
+
                     foreach (var monitorId in currentMonitors)
                     {
                         if (!nextChangeTime.ContainsKey(monitorId) || !monitorImages.ContainsKey(monitorId))
@@ -412,6 +457,10 @@ namespace WallpaperSlideshow
                                 }
                                 monitorIndexes[monitorId] = (idxNext + 1) % images.Length;
                                 nextChangeTime[monitorId] = now.AddSeconds(monitorWaits[monitorId]);
+                                if (monitorFolderIndexes.ContainsKey(monitorId))
+                                {
+                                    SaveNextChangeTimeToRegistry(monitorFolderIndexes[monitorId], nextChangeTime[monitorId]);
+                                }
                             }
                         }
                     }
@@ -551,6 +600,43 @@ namespace WallpaperSlideshow
             }
             catch { }
             return defaultIndex;
+        }
+
+        static void SaveNextChangeTimeToRegistry(int folderIndex, DateTime nextChangeTime)
+        {
+            try
+            {
+                using (RegistryKey baseKey = Registry.CurrentUser.CreateSubKey(@"Software\WallpaperSlideshow"))
+                {
+                    using (RegistryKey subKey = baseKey.CreateSubKey(folderIndex.ToString()))
+                    {
+                        subKey.SetValue("NextChangeTime", nextChangeTime.ToBinary(), RegistryValueKind.QWord);
+                    }
+                }
+            }
+            catch { }
+        }
+
+        static DateTime LoadNextChangeTimeFromRegistry(int folderIndex, DateTime defaultTime)
+        {
+            try
+            {
+                using (RegistryKey baseKey = Registry.CurrentUser.OpenSubKey(@"Software\WallpaperSlideshow"))
+                {
+                    if (baseKey == null) return defaultTime;
+                    using (RegistryKey subKey = baseKey.OpenSubKey(folderIndex.ToString()))
+                    {
+                        if (subKey == null) return defaultTime;
+                        object value = subKey.GetValue("NextChangeTime");
+                        if (value != null)
+                        {
+                            return DateTime.FromBinary((long)value);
+                        }
+                    }
+                }
+            }
+            catch { }
+            return defaultTime;
         }
     }
 
