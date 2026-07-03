@@ -1,6 +1,6 @@
 # WallpaperSlideshow
 
-### Version 1.1.2
+### Version 1.2.0
 
 Multi-monitor, multi-folder wallpaper slideshows. Command line or GUI.
 
@@ -10,7 +10,7 @@ Multi-monitor, multi-folder wallpaper slideshows. Command line or GUI.
 
 ### Install Using Setup Program
 
-[![image](https://github.com/user-attachments/assets/75e62417-c8ee-43b1-a8a8-a217ce130c91)Download the installer](https://github.com/LesFerch/WallpaperSlideshow/releases/download/1.1.2/WallpaperSlideshow-Setup.exe)
+[![image](https://github.com/user-attachments/assets/75e62417-c8ee-43b1-a8a8-a217ce130c91)Download the installer](https://github.com/LesFerch/WallpaperSlideshow/releases/download/1.2.0/WallpaperSlideshow-Setup.exe)
 
 The WallpaperSlideshow installer requires administrator access.
 
@@ -22,7 +22,7 @@ The WallpaperSlideshow installer requires administrator access.
 
 ### Portable Use
 
-[![image](https://github.com/LesFerch/WinSetView/assets/79026235/0188480f-ca53-45d5-b9ff-daafff32869e)Download the zip file](https://github.com/LesFerch/WallpaperSlideshow/releases/download/1.1.2/WallpaperSlideshow.zip)
+[![image](https://github.com/LesFerch/WinSetView/assets/79026235/0188480f-ca53-45d5-b9ff-daafff32869e)Download the zip file](https://github.com/LesFerch/WallpaperSlideshow/releases/download/1.2.0/WallpaperSlideshow.zip)
 
 Using WallpaperSlideshow as a portable app does NOT require administrator access.
 
@@ -50,6 +50,7 @@ Full feature list:
  - Keeps running when monitors are connected or disconnected.
  - Survives an Explorer restart.
  - Continues from where it left off.
+ - Shuffle on start and/or reshuffle on repeat.
 
 WallpaperSlideshow is meant to be simple and lightweight with support for command line operation and a simple GUI. The CPU and memory footprint is very small. It is not meant to compete with big programs like Wallpaper Engine.
 
@@ -57,15 +58,8 @@ WallpaperSlideshow is meant to be simple and lightweight with support for comman
 
 ## How to Use (GUI)
 
-Light:
-
-<img width="799" height="194" alt="image" src="https://github.com/user-attachments/assets/a1e967b6-9a50-44af-a9ce-51f98063313a" />
-
-\
-Dark:
-
-<img width="801" height="196" alt="image" src="https://github.com/user-attachments/assets/6ed860d9-2cd4-4294-8d7c-0dab56289e34" />
-
+<img width="792" height="255" alt="image" src="https://github.com/user-attachments/assets/12a25dd5-8928-4662-b451-a423f466e538#gh-light-mode-only" />
+<img width="792" height="256" alt="image" src="https://github.com/user-attachments/assets/f796925c-a2c8-4058-be06-b5739963bc98#gh-dark-mode-only" />
 
 ### Interface
 
