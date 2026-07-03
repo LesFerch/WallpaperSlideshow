@@ -7,7 +7,6 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Diagnostics;
 using System.Windows.Forms;
-using System.Text;
 
 namespace WallpaperSlideshow
 {
@@ -34,8 +33,11 @@ namespace WallpaperSlideshow
 
         static Mutex mutex = new Mutex(true, "{6B63C8F3-18F1-4D57-87F0-B6281CE747FA}");
 
-        static string myPath = Path.GetDirectoryName(Application.ExecutablePath);
         static bool Sync = false;
+        static bool Shuffle = false;
+        static bool ReShuffle = false;
+
+        private static readonly Random rng = new Random();
 
         [DllImport("kernel32.dll")]
         static extern bool AttachConsole(int dwProcessId);
@@ -85,8 +87,15 @@ namespace WallpaperSlideshow
                 return;
             }
 
-            string iniFile = Path.Combine(myPath, "WallpaperSlideshow.ini");
-            Sync = ReadString(iniFile, "General", "Sync", "").ToLower() == "true";
+            using (RegistryKey baseKey = Registry.CurrentUser.OpenSubKey(@"Software\WallpaperSlideshow"))
+            {
+                if (baseKey != null)
+                {
+                    Sync      = (int)(baseKey.GetValue("Sync",      0) ?? 0) != 0;
+                    Shuffle   = (int)(baseKey.GetValue("Shuffle",   0) ?? 0) != 0;
+                    ReShuffle = (int)(baseKey.GetValue("ReShuffle", 0) ?? 0) != 0;
+                }
+            }
 
             Application.EnableVisualStyles();
             Application.SetCompatibleTextRenderingDefault(false);
@@ -156,56 +165,6 @@ namespace WallpaperSlideshow
             }
         }
 
-        // INI file reading
-        static string ReadString(string iniFile, string section, string key, string defaultValue)
-        {
-            try
-            {
-                if (File.Exists(iniFile))
-                {
-                    return IniFileParser.ReadValue(section, key, defaultValue, iniFile);
-                }
-            }
-            catch { }
-
-            return defaultValue;
-        }
-
-        // INI file parser
-        public static class IniFileParser
-        {
-            public static string ReadValue(string section, string key, string defaultValue, string filePath)
-            {
-                try
-                {
-                    var lines = File.ReadAllLines(filePath, Encoding.UTF8);
-                    string currentSection = null;
-
-                    foreach (var line in lines)
-                    {
-                        string trimmedLine = line.Trim();
-
-                        if (trimmedLine.StartsWith("[") && trimmedLine.EndsWith("]"))
-                        {
-                            currentSection = trimmedLine.Substring(1, trimmedLine.Length - 2);
-                        }
-                        else if (currentSection == section)
-                        {
-                            var parts = trimmedLine.Split(new char[] { '=' }, 2);
-                            if (parts.Length == 2 && parts[0].Trim() == key)
-                            {
-                                return parts[1].Trim();
-                            }
-                        }
-                    }
-                }
-                catch (Exception)
-                {
-                }
-                return defaultValue;
-            }
-        }
-
 
         static void RunSlideshowLoop(IDesktopWallpaper handler, List<FolderWait> initialFolderWaits)
         {
@@ -271,6 +230,29 @@ namespace WallpaperSlideshow
                     HashSet<string> currentMonitors = new HashSet<string>();
                     HashSet<string> activeFolders = new HashSet<string>(StringComparer.OrdinalIgnoreCase);
 
+                    // Pre-pass: identify folder paths used by more than one monitor
+                    HashSet<string> sharedFolderPaths = new HashSet<string>(StringComparer.OrdinalIgnoreCase);
+                    {
+                        Dictionary<string, int> pathUsageCount = new Dictionary<string, int>(StringComparer.OrdinalIgnoreCase);
+                        for (uint j = 0; j < monitorCount; j++)
+                        {
+                            string tempId;
+                            handler.GetMonitorDevicePathAt(j, out tempId);
+                            if (string.IsNullOrEmpty(tempId)) continue;
+                            int tempIdx = (int)j < folderWaits.Count ? (int)j : 0;
+                            string tempPath = folderWaits[tempIdx].Folder;
+                            pathUsageCount[tempPath] = pathUsageCount.ContainsKey(tempPath) ? pathUsageCount[tempPath] + 1 : 1;
+                        }
+                        foreach (var kv in pathUsageCount)
+                            if (kv.Value > 1) sharedFolderPaths.Add(kv.Key);
+                    }
+
+                    // Track start indexes already assigned per shared folder path to ensure exclusive random selection
+                    Dictionary<string, List<int>> folderAssignedIndexes = new Dictionary<string, List<int>>(StringComparer.OrdinalIgnoreCase);
+
+                    // Folders whose change notifications will be cleared after all monitors have been processed
+                    HashSet<string> processedFolderChanges = new HashSet<string>(StringComparer.OrdinalIgnoreCase);
+
                     for (uint i = 0; i < monitorCount; i++)
                     {
                         string monitorId;
@@ -288,7 +270,7 @@ namespace WallpaperSlideshow
                         string folder = folderWaits[idx].Folder;
                         int wait = folderWaits[idx].Wait;
 
-                        monitorFolderIndexes[monitorId] = idx; // Track which folder index this monitor uses
+                        monitorFolderIndexes[monitorId] = idx; // Track which folder enumeration index each monitor uses
                         activeFolders.Add(folder); // Track folders currently assigned to monitors
                         monitorWaits[monitorId] = wait;
 
@@ -299,7 +281,7 @@ namespace WallpaperSlideshow
                         {
                             if (foldersWithChanges.Contains(folder))
                             {
-                                foldersWithChanges.Remove(folder);
+                                processedFolderChanges.Add(folder);
                                 needsReload = true;
                             }
                         }
@@ -308,38 +290,74 @@ namespace WallpaperSlideshow
                         if (!monitorImages.ContainsKey(monitorId) || folderWaitsChanged || needsReload)
                         {
                             if (!Directory.Exists(folder)) continue;
-                            monitorImages[monitorId] = Directory.GetFiles(folder).Where(IsImage).ToArray();
 
-                            if (monitorImages[monitorId].Length > 0)
+                            monitorImages[monitorId] = Directory.GetFiles(folder).Where(IsImage).ToArray();
+                            string[] images = monitorImages[monitorId];
+
+                            if (images.Length > 0)
                             {
+                                if (Shuffle) ShuffleArray(images);
+
                                 int startIdx;
 
-                                // Try to load the saved index from registry
-                                int savedIdx = LoadImageIndexFromRegistry(idx, -1);
-
-                                if (savedIdx >= 0 && savedIdx < monitorImages[monitorId].Length)
+                                if (Shuffle)
                                 {
-                                    // Use saved index if valid
-                                    startIdx = savedIdx;
+                                    // Array was just shuffled, so any saved index refers to
+                                    // a different image - always start at the beginning
+                                    startIdx = 0;
                                 }
                                 else if (Sync)
                                 {
-                                    // For sync mode, use same starting image
+                                    // For sync mode, all monitors start at the same image
                                     startIdx = 0;
+                                }
+                                else if (sharedFolderPaths.Contains(folder))
+                                {
+                                    // Shared folder path, Sync=off: pick an exclusive random index so
+                                    // monitors sharing a folder don't accidentally start in sync
+                                    if (!folderAssignedIndexes.ContainsKey(folder))
+                                        folderAssignedIndexes[folder] = new List<int>();
+
+                                    List<int> assigned = folderAssignedIndexes[folder];
+                                    if (assigned.Count < images.Length)
+                                    {
+                                        // Pick randomly from indexes not yet assigned to another monitor
+                                        List<int> available = new List<int>();
+                                        for (int k = 0; k < images.Length; k++)
+                                            if (!assigned.Contains(k)) available.Add(k);
+                                        startIdx = available[random.Next(available.Count)];
+                                    }
+                                    else
+                                    {
+                                        // More monitors than images; all indexes taken, just pick random
+                                        startIdx = random.Next(images.Length);
+                                    }
+                                    assigned.Add(startIdx);
                                 }
                                 else
                                 {
-                                    // Otherwise, set random starting image
-                                    startIdx = random.Next(monitorImages[monitorId].Length);
+                                    // Try to load the saved index from registry
+                                    int savedIdx = LoadImageIndexFromRegistry(idx, -1);
+
+                                    if (savedIdx >= 0 && savedIdx < images.Length)
+                                    {
+                                        // Use saved index if valid
+                                        startIdx = savedIdx;
+                                    }
+                                    else
+                                    {
+                                        // Otherwise, set random starting image
+                                        startIdx = random.Next(images.Length);
+                                    }
                                 }
 
                                 // Immediately apply the saved wallpaper, then queue the next image
-                                if (File.Exists(monitorImages[monitorId][startIdx]))
+                                if (File.Exists(images[startIdx]))
                                 {
-                                    try { handler.SetWallpaper(monitorId, monitorImages[monitorId][startIdx]); }
+                                    try { handler.SetWallpaper(monitorId, images[startIdx]); }
                                     catch { }
                                 }
-                                monitorIndexes[monitorId] = (startIdx + 1) % monitorImages[monitorId].Length;
+                                monitorIndexes[monitorId] = (startIdx + 1) % images.Length;
                                 SaveImageIndexToRegistry(idx, startIdx);
                             }
 
@@ -354,6 +372,16 @@ namespace WallpaperSlideshow
                             monitorIndexes[monitorId] = 0;
                         if (!nextChangeTime.ContainsKey(monitorId))
                             nextChangeTime[monitorId] = DateTime.Now;
+                    }
+
+                    // Now that all monitors have seen the folder changes, clear them
+                    if (processedFolderChanges.Count > 0)
+                    {
+                        lock (lockObj)
+                        {
+                            foreach (string f in processedFolderChanges)
+                                foldersWithChanges.Remove(f);
+                        }
                     }
 
                     // Update FileSystemWatchers: remove watchers for folders no longer in use
@@ -455,7 +483,13 @@ namespace WallpaperSlideshow
                                     }
                                     catch { }
                                 }
-                                monitorIndexes[monitorId] = (idxNext + 1) % images.Length;
+                                int nextIdx = (idxNext + 1) % images.Length;
+
+                                // If we've just shown the last image and ReShuffle is on, reshuffle before wrapping
+                                if (ReShuffle && nextIdx == 0)
+                                    ShuffleArray(images);
+
+                                monitorIndexes[monitorId] = nextIdx;
                                 nextChangeTime[monitorId] = now.AddSeconds(monitorWaits[monitorId]);
                                 if (monitorFolderIndexes.ContainsKey(monitorId))
                                 {
@@ -497,6 +531,15 @@ namespace WallpaperSlideshow
                     // Other unexpected errors - wait and continue
                     Thread.Sleep(1000);
                 }
+            }
+        }
+
+        private static void ShuffleArray<T>(T[] array)
+        {
+            for (int i = array.Length - 1; i > 0; i--)
+            {
+                int j = rng.Next(i + 1);
+                (array[i], array[j]) = (array[j], array[i]);
             }
         }
 
