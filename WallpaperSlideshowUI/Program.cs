@@ -32,8 +32,14 @@ namespace WallpaperSlideshowUI
         static string sMonitor = "Monitor";
         static string sWait = "Wait";
         static string sFolder = "Slideshow Folder";
+        static bool Shuffle = false;
+        static bool ReShuffle = false;
+        static bool Sync = false;
+        static string sShuffleOnStart = "Shuffle on start";
+        static string sShuffleOnRepeat = "Shuffle on repeat";
+        static string sSync = "Sync";
 
-        // Prevents multiple instances of the settings UI from running simultaneously
+        // Prevents multiple instances
         static Mutex mutex = new Mutex(true, "{E41A231A-A858-41DF-8F0E-A5A29F40301C}");
 
         [DllImport("user32.dll")]
@@ -118,6 +124,9 @@ namespace WallpaperSlideshowUI
             sHours = ReadString(iniFile, lang, "sHours", sHours);
             sMinutes = ReadString(iniFile, lang, "sMinutes", sMinutes);
             sSeconds = ReadString(iniFile, lang, "sSeconds", sSeconds);
+            sShuffleOnStart = ReadString(iniFile, lang, "sShuffleOnStart", sShuffleOnStart);
+            sShuffleOnRepeat = ReadString(iniFile, lang, "sShuffleOnRepeat", sShuffleOnRepeat);
+            sSync = ReadString(iniFile, lang, "sSync", sSync);
         }
 
 
@@ -167,6 +176,60 @@ namespace WallpaperSlideshowUI
                 {
                 }
                 return defaultValue;
+            }
+
+            public static void WriteValue(string section, string key, string value, string filePath)
+            {
+                try
+                {
+                    var lines = File.Exists(filePath)
+                        ? new List<string>(File.ReadAllLines(filePath, Encoding.UTF8))
+                        : new List<string>();
+
+                    string sectionHeader = "[" + section + "]";
+                    int sectionIndex = -1;
+
+                    for (int i = 0; i < lines.Count; i++)
+                    {
+                        if (lines[i].Trim() == sectionHeader)
+                        {
+                            sectionIndex = i;
+                            break;
+                        }
+                    }
+
+                    if (sectionIndex == -1)
+                    {
+                        if (lines.Count > 0 && !string.IsNullOrWhiteSpace(lines[lines.Count - 1]))
+                            lines.Add("");
+                        lines.Add(sectionHeader);
+                        lines.Add(key + "=" + value);
+                    }
+                    else
+                    {
+                        int insertAt = lines.Count;
+                        for (int i = sectionIndex + 1; i < lines.Count; i++)
+                        {
+                            string trimmed = lines[i].Trim();
+                            if (trimmed.StartsWith("[") && trimmed.EndsWith("]"))
+                            {
+                                insertAt = i;
+                                break;
+                            }
+                            var parts = trimmed.Split(new char[] { '=' }, 2);
+                            if (parts.Length == 2 && parts[0].Trim() == key)
+                            {
+                                lines[i] = key + "=" + value;
+                                File.WriteAllLines(filePath, lines, Encoding.UTF8);
+                                return;
+                            }
+                        }
+                        lines.Insert(insertAt, key + "=" + value);
+                    }
+
+                    File.WriteAllLines(filePath, lines, Encoding.UTF8);
+                }
+                catch { }
             }
         }
 
@@ -218,6 +281,11 @@ namespace WallpaperSlideshowUI
             using (var baseKey = Registry.CurrentUser.OpenSubKey(@"Software\WallpaperSlideshow"))
             {
                 if (baseKey == null) return result;
+
+                Shuffle = ((int)(baseKey.GetValue("Shuffle") ?? 0)) != 0;
+                ReShuffle = ((int)(baseKey.GetValue("ReShuffle") ?? 0)) != 0;
+                Sync = ((int)(baseKey.GetValue("Sync") ?? 0)) != 0;
+
                 int idx = 0;
                 while (true)
                 {
@@ -344,13 +412,13 @@ namespace WallpaperSlideshowUI
                 int minutes = (initialSeconds % 3600) / 60;
                 int seconds = initialSeconds % 60;
 
-                lblHours = new Label { Text = sHours, Left = (int)(20 * scale), Top = (int)(20 * scale), Width = (int)(60 * scale) };
+                lblHours = new Label { Text = sHours, AutoSize = true, Left = (int)(20 * scale), Top = (int)(20 * scale) };
                 numHours = new NumericUpDown { Left = (int)(90 * scale), Top = (int)(18 * scale), Width = (int)(60 * scale), Minimum = 0, Maximum = 99, Value = hours };
 
-                lblMinutes = new Label { Text = sMinutes, Left = (int)(20 * scale), Top = (int)(50 * scale), Width = (int)(60 * scale) };
+                lblMinutes = new Label { Text = sMinutes, AutoSize = true, Left = (int)(20 * scale), Top = (int)(50 * scale) };
                 numMinutes = new NumericUpDown { Left = (int)(90 * scale), Top = (int)(48 * scale), Width = (int)(60 * scale), Minimum = 0, Maximum = 59, Value = minutes };
 
-                lblSeconds = new Label { Text = sSeconds, Left = (int)(20 * scale), Top = (int)(80 * scale), Width = (int)(60 * scale) };
+                lblSeconds = new Label { Text = sSeconds, AutoSize = true, Left = (int)(20 * scale), Top = (int)(80 * scale) };
                 numSeconds = new NumericUpDown { Left = (int)(90 * scale), Top = (int)(78 * scale), Width = (int)(60 * scale), Minimum = 0, Maximum = 59, Value = seconds };
 
                 btnOK = new Button
@@ -406,6 +474,12 @@ namespace WallpaperSlideshowUI
             private Button btnExit;
             private ToggleSwitch toggleStartup;
             private Label lblStartup;
+            private ToggleSwitch toggleShuffle;
+            private Label lblShuffleOnStart;
+            private ToggleSwitch toggleReShuffle;
+            private Label lblShuffleOnRepeat;
+            private ToggleSwitch toggleSync;
+            private Label lblSync;
             private List<(string folder, int wait)> folderWaits;
             private int monitorCount;
             private int hoveredButtonRow = -1;
@@ -519,24 +593,21 @@ namespace WallpaperSlideshowUI
                     Text = sOK,
                     Width = buttonWidth,
                     Height = buttonHeight,
-                    Left = padding,
-                    Anchor = AnchorStyles.Bottom | AnchorStyles.Left,
+                    Anchor = AnchorStyles.Bottom,
                 };
                 btnHelp = new Button
                 {
                     Text = sHelp,
                     Width = buttonWidth,
                     Height = buttonHeight,
-                    Left = btnOK.Left + buttonWidth + padding,
-                    Anchor = AnchorStyles.Bottom | AnchorStyles.Left,
+                    Anchor = AnchorStyles.Bottom,
                 };
                 btnExit = new Button
                 {
                     Text = sExit,
                     Width = buttonWidth,
                     Height = buttonHeight,
-                    Left = btnHelp.Left + buttonWidth + padding,
-                    Anchor = AnchorStyles.Bottom | AnchorStyles.Left,
+                    Anchor = AnchorStyles.Bottom,
                 };
 
                 bool isDark = Dark;
@@ -594,10 +665,16 @@ namespace WallpaperSlideshowUI
                 grid.CellMouseMove += Grid_CellMouseMove;
                 grid.CellMouseLeave += Grid_CellMouseLeave;
 
-                int spaceAboveButtons = (int)(12 * scale);
-                int spaceBelowButtons = (int)(8 * scale);
+                int spaceAboveButtons      = (int)(12 * scale);
+                int spaceBelowButtons      = (int)(8 * scale);
+                int toggleRowHeight        = buttonHeight;
+                int spaceBetweenToggleRows = (int)(2 * scale);  // ← fine-tune gap between the two switch rows
+                int spaceBetweenToggleAndButtons = (int)(8 * scale);  // ← fine-tune gap between switches and buttons
 
-                int buttonsTop = grid.Top + grid.Height + spaceAboveButtons;
+                int togglesRow1Top = grid.Top + grid.Height + spaceAboveButtons;
+                int togglesRow2Top = togglesRow1Top + toggleRowHeight + spaceBetweenToggleRows;
+                int buttonsTop     = togglesRow2Top + toggleRowHeight + spaceBetweenToggleAndButtons;
+
                 this.ClientSize = new Size(
                     this.Width - padding,
                     buttonsTop + buttonHeight + spaceBelowButtons
@@ -607,36 +684,119 @@ namespace WallpaperSlideshowUI
                 btnHelp.Top = buttonsTop;
                 btnExit.Top = buttonsTop;
 
+                int totalButtonsWidth = 3 * buttonWidth + 2 * padding;
+                int btnGroupLeft = (this.ClientSize.Width - totalButtonsWidth) / 2;
+                btnOK.Left   = btnGroupLeft;
+                btnHelp.Left = btnGroupLeft + buttonWidth + padding;
+                btnExit.Left = btnGroupLeft + 2 * (buttonWidth + padding);
+
+                int formWidth = this.ClientSize.Width;
+                int toggleGap = (int)(8 * scale);
+
+                // Right-column position driven by the wider of the two left-column labels
+                int toggleWidth = (int)(44 * scale);
+                int leftLabelMax = Math.Max(
+                    TextRenderer.MeasureText(sShuffleOnStart,  this.Font).Width,
+                    TextRenderer.MeasureText(sShuffleOnRepeat, this.Font).Width);
+                int col1Left = toggleGap;
+                int col2Left = col1Left + toggleWidth + toggleGap + leftLabelMax + padding;
+
+                // Row 1: Shuffle on start | Sync
+                toggleShuffle = new ToggleSwitch
+                {
+                    Checked = Shuffle,
+                    Left = col1Left,
+                    Anchor = AnchorStyles.Bottom | AnchorStyles.Left
+                };
+                toggleShuffle.Top = togglesRow1Top + (toggleRowHeight - toggleShuffle.Height) / 2;
+
+                lblShuffleOnStart = new Label
+                {
+                    Text = sShuffleOnStart,
+                    AutoSize = true,
+                    Left = toggleShuffle.Left + toggleShuffle.Width + toggleGap,
+                    Anchor = AnchorStyles.Bottom | AnchorStyles.Left
+                };
+                lblShuffleOnStart.Top = togglesRow1Top + (toggleRowHeight - lblShuffleOnStart.Height) / 2;
+
+                toggleSync = new ToggleSwitch
+                {
+                    Checked = Sync,
+                    Left = col2Left,
+                    Anchor = AnchorStyles.Bottom | AnchorStyles.Left
+                };
+                toggleSync.Top = togglesRow1Top + (toggleRowHeight - toggleSync.Height) / 2;
+
+                lblSync = new Label
+                {
+                    Text = sSync,
+                    AutoSize = true,
+                    Left = toggleSync.Left + toggleSync.Width + toggleGap,
+                    Anchor = AnchorStyles.Bottom | AnchorStyles.Left
+                };
+                lblSync.Top = togglesRow1Top + (toggleRowHeight - lblSync.Height) / 2;
+
+                // Row 2: Shuffle on repeat | Run at startup
+                toggleReShuffle = new ToggleSwitch
+                {
+                    Checked = ReShuffle,
+                    Left = col1Left,
+                    Anchor = AnchorStyles.Bottom | AnchorStyles.Left
+                };
+                toggleReShuffle.Top = togglesRow2Top + (toggleRowHeight - toggleReShuffle.Height) / 2;
+
+                lblShuffleOnRepeat = new Label
+                {
+                    Text = sShuffleOnRepeat,
+                    AutoSize = true,
+                    Left = toggleReShuffle.Left + toggleReShuffle.Width + toggleGap,
+                    Anchor = AnchorStyles.Bottom | AnchorStyles.Left
+                };
+                lblShuffleOnRepeat.Top = togglesRow2Top + (toggleRowHeight - lblShuffleOnRepeat.Height) / 2;
+
                 toggleStartup = new ToggleSwitch
                 {
                     Checked = IsStartup,
-                    Left = btnExit.Left + buttonWidth + padding,
+                    Left = col2Left,
                     Anchor = AnchorStyles.Bottom | AnchorStyles.Left
                 };
-                toggleStartup.Top = buttonsTop + (buttonHeight - toggleStartup.Height) / 2;
+                toggleStartup.Top = togglesRow2Top + (toggleRowHeight - toggleStartup.Height) / 2;
 
                 lblStartup = new Label
                 {
                     Text = sStartup,
                     AutoSize = true,
-                    Left = toggleStartup.Left + toggleStartup.Width + (int)(8 * scale),
+                    Left = toggleStartup.Left + toggleStartup.Width + toggleGap,
                     Anchor = AnchorStyles.Bottom | AnchorStyles.Left
                 };
-                lblStartup.Top = buttonsTop + (buttonHeight - lblStartup.Height) / 2;
+                lblStartup.Top = togglesRow2Top + (toggleRowHeight - lblStartup.Height) / 2;
 
-                if (isDark) lblStartup.ForeColor = Color.White;
+                if (isDark)
+                {
+                    lblShuffleOnStart.ForeColor = Color.White;
+                    lblShuffleOnRepeat.ForeColor = Color.White;
+                    lblSync.ForeColor = Color.White;
+                    lblStartup.ForeColor = Color.White;
+                }
 
                 this.Controls.Add(grid);
                 this.Controls.Add(btnOK);
                 this.Controls.Add(btnHelp);
                 this.Controls.Add(btnExit);
+                this.Controls.Add(toggleShuffle);
+                this.Controls.Add(lblShuffleOnStart);
+                this.Controls.Add(toggleSync);
+                this.Controls.Add(lblSync);
+                this.Controls.Add(toggleReShuffle);
+                this.Controls.Add(lblShuffleOnRepeat);
                 this.Controls.Add(toggleStartup);
                 this.Controls.Add(lblStartup);
 
                 grid.CellContentClick += Grid_CellContentClick;
                 grid.EditingControlShowing += Grid_EditingControlShowing;
-                toggleStartup.CheckedChanged += ToggleStartup_CheckedChanged;
+                grid.CellValueChanged += Grid_CellValueChanged;
 
+                UpdateSyncToggle();
                 this.StartPosition = FormStartPosition.CenterScreen;
             }
 
@@ -774,8 +934,17 @@ namespace WallpaperSlideshowUI
             // Save settings to registry: HKCU\Software\WallpaperSlideshow\0, \1, \2, etc.
             private void SaveSettings()
             {
+                if (toggleStartup.Checked)
+                    CreateStartupShortcut();
+                else
+                    RemoveStartupShortcut();
+
                 using (var baseKey = Registry.CurrentUser.CreateSubKey(@"Software\WallpaperSlideshow"))
                 {
+                    baseKey.SetValue("Shuffle", toggleShuffle.Checked ? 1 : 0, RegistryValueKind.DWord);
+                    baseKey.SetValue("ReShuffle", toggleReShuffle.Checked ? 1 : 0, RegistryValueKind.DWord);
+                    baseKey.SetValue("Sync", toggleSync.Checked ? 1 : 0, RegistryValueKind.DWord);
+
                     for (int i = 0; i < grid.Rows.Count; i++)
                     {
                         string folder = grid.Rows[i].Cells["Folder"].Value?.ToString() ?? "";
@@ -893,6 +1062,7 @@ namespace WallpaperSlideshowUI
                     if (fd.ShowDialog(IntPtr.Zero) == true && !string.IsNullOrEmpty(fd.ResultPath))
                     {
                         grid.Rows[e.RowIndex].Cells["Folder"].Value = fd.ResultPath;
+                        UpdateSyncToggle();
                     }
 
                     // Restore user's original "Expand to current folder" setting
@@ -957,21 +1127,45 @@ namespace WallpaperSlideshowUI
                 }
             }
 
-            // Handle startup toggle changes
-            private void ToggleStartup_CheckedChanged(object sender, EventArgs e)
+            private void Grid_CellValueChanged(object sender, DataGridViewCellEventArgs e)
             {
-                if (toggleStartup.Checked)
+                if (e.RowIndex >= 0 && e.ColumnIndex == grid.Columns["Folder"].Index)
+                    UpdateSyncToggle();
+            }
+
+            private void UpdateSyncToggle()
+            {
+                if (grid.RowCount < 2)
                 {
-                    CreateStartupShortcut();
-                    IsStartup = true;
+                    toggleSync.Checked = false;
+                    toggleSync.Enabled = false;
+                    return;
+                }
+
+                var folders = new List<string>();
+                for (int i = 0; i < grid.Rows.Count; i++)
+                {
+                    string folder = grid.Rows[i].Cells["Folder"].Value?.ToString();
+                    if (!string.IsNullOrEmpty(folder))
+                        folders.Add(folder);
+                }
+
+                bool hasDuplicate = folders
+                    .GroupBy(f => f, StringComparer.OrdinalIgnoreCase)
+                    .Any(g => g.Count() > 1);
+
+                if (hasDuplicate)
+                {
+                    toggleSync.Enabled = true;
                 }
                 else
                 {
-                    RemoveStartupShortcut();
-                    IsStartup = false;
+                    toggleSync.Checked = false;
+                    toggleSync.Enabled = false;
                 }
             }
-        }
+
+            }
 
         // Courtesy of Simon Mourier https://stackoverflow.com/a/66187224/15764378
         public class FolderPicker
@@ -1200,6 +1394,12 @@ namespace WallpaperSlideshowUI
                 _animationTimer.Tick += AnimationTimer_Tick;
             }
 
+            protected override void OnEnabledChanged(EventArgs e)
+            {
+                base.OnEnabledChanged(e);
+                this.Invalidate();
+            }
+
             private void StartAnimation()
             {
                 _animationTimer.Start();
@@ -1234,22 +1434,35 @@ namespace WallpaperSlideshowUI
                 e.Graphics.SmoothingMode = System.Drawing.Drawing2D.SmoothingMode.AntiAlias;
 
                 bool isDark = Dark;
+                bool isEnabled = this.Enabled;
 
                 // Different hover colors for light and dark mode
                 Color hoverColor = isDark ? Color.Black : Color.FromArgb(77, 161, 227);
 
-                // Windows 10 style colors
-                Color trackColorOff = _isHovered
-                    ? hoverColor
-                    : (isDark ? Color.FromArgb(60, 60, 60) : Color.FromArgb(200, 200, 200));
+                Color trackColorOff, trackColorOn, thumbColor, borderColor;
 
-                Color trackColorOn = _isHovered
-                    ? hoverColor
-                    : Color.FromArgb(0, 120, 215); // Windows 10 blue
+                if (!isEnabled)
+                {
+                    // Dimmed colours for disabled state
+                    trackColorOff = isDark ? Color.FromArgb(45, 45, 45) : Color.FromArgb(210, 210, 210);
+                    trackColorOn  = trackColorOff;
+                    thumbColor    = isDark ? Color.FromArgb(80, 80, 80)  : Color.FromArgb(190, 190, 190);
+                    borderColor   = isDark ? Color.FromArgb(55, 55, 55)  : Color.FromArgb(200, 200, 200);
+                }
+                else
+                {
+                    // Windows 10 style colors
+                    trackColorOff = _isHovered
+                        ? hoverColor
+                        : (isDark ? Color.FromArgb(60, 60, 60) : Color.FromArgb(200, 200, 200));
 
-                // Different thumb colors for light and dark mode
-                Color thumbColor = Color.White;
-                Color borderColor = isDark ? Color.FromArgb(80, 80, 80) : Color.FromArgb(180, 180, 180);
+                    trackColorOn = _isHovered
+                        ? hoverColor
+                        : Color.FromArgb(0, 120, 215); // Windows 10 blue
+
+                    thumbColor  = Color.White;
+                    borderColor = isDark ? Color.FromArgb(80, 80, 80) : Color.FromArgb(180, 180, 180);
+                }
 
                 // Interpolate colors based on animation progress
                 int r = (int)(trackColorOff.R + (trackColorOn.R - trackColorOff.R) * _animationProgress);

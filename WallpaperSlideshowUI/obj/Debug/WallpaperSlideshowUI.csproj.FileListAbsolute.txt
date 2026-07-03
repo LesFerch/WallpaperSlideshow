@@ -1,0 +1,7 @@
+C:\Users\Ferch\source\repos\WallpaperSlideshowUI\bin\Debug\WallpaperSlideshowUI.exe.config
+C:\Users\Ferch\source\repos\WallpaperSlideshowUI\bin\Debug\WallpaperSlideshowUI.exe
+C:\Users\Ferch\source\repos\WallpaperSlideshowUI\bin\Debug\WallpaperSlideshowUI.pdb
+C:\Users\Ferch\source\repos\WallpaperSlideshowUI\obj\Debug\WallpaperSlideshowUI.csproj.AssemblyReference.cache
+C:\Users\Ferch\source\repos\WallpaperSlideshowUI\obj\Debug\WallpaperSlideshowUI.csproj.CoreCompileInputs.cache
+C:\Users\Ferch\source\repos\WallpaperSlideshowUI\obj\Debug\WallpaperSlideshowUI.exe
+C:\Users\Ferch\source\repos\WallpaperSlideshowUI\obj\Debug\WallpaperSlideshowUI.pdb
