@@ -71,7 +71,7 @@ WallpaperSlideshow is meant to be simple and lightweight with support for comman
 
 - To exclude a monitor from the slideshow, and be able to set its wallpaper manually (or using another program), set it to a folder that contains no images. An empty folder is a good choice in this case.
 
-- To have the same slideshow on more than one monitor, set those monitors to use the same folder. To have them synchronized, enable the `Sync` option.
+- To have the same slideshow on more than one monitor, set those monitors to use the same folder. To have them synchronized, enable the `Sync` option (only available when two or more monitors are set to use the same image folder).
 
 - Click the stopwatch icon (⏱) to set a time in hours, minutes, seconds to wait between image changes. You can also click on the number and directly type in a value in seconds. The wait time is shown in seconds. The minimum is 1 and the maximum is 359999 (~ 100 hours).
 
@@ -80,8 +80,6 @@ WallpaperSlideshow is meant to be simple and lightweight with support for comman
 - To have the image order shuffled on program start, enable `Shuffle on start`.
 
 - To have the image order shuffled when the slideshow returns to the first picture, enable `Shuffle on repeat`.
-
-- To have images synchronized on multiple monitors, enable `Sync`. This option is only available when two or more monitors share the same image folder.
 
 - To close the GUI without making any changes,  click the `X`.
 
