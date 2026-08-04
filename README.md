@@ -61,7 +61,7 @@ WallpaperSlideshow is meant to be simple and lightweight with support for comman
 <picture>
   <source media="(prefers-color-scheme: dark)" srcset="https://github.com/user-attachments/assets/f8727f47-edbd-4bb3-87c2-39964351090a">
   <source media="(prefers-color-scheme: light)" srcset="https://github.com/user-attachments/assets/9f42d89c-d65c-4f1a-95d4-1b726dde89c6">
-  <img alt="image" src="https://github.com/user-attachments/assets/9f42d89c-d65c-4f1a-95d4-1b726dde89c6" style="width: 100%; height: auto; />
+  <img alt="image" src="https://github.com/user-attachments/assets/9f42d89c-d65c-4f1a-95d4-1b726dde89c6" style="width: 100%; height: auto;" />
 </picture>
 
 ### Interface
