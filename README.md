@@ -59,9 +59,9 @@ WallpaperSlideshow is meant to be simple and lightweight with support for comman
 ## How to Use (GUI)
 
 <picture>
-  <source media="(prefers-color-scheme: dark)" srcset="https://github.com/user-attachments/assets/f796925c-a2c8-4058-be06-b5739963bc98">
-  <source media="(prefers-color-scheme: light)" srcset="https://github.com/user-attachments/assets/12a25dd5-8928-4662-b451-a423f466e538">
-  <img width="792" height="255" alt="image" src="https://github.com/user-attachments/assets/12a25dd5-8928-4662-b451-a423f466e538#gh-light-mode-only" />
+  <source media="(prefers-color-scheme: dark)" srcset="https://github.com/user-attachments/assets/f8727f47-edbd-4bb3-87c2-39964351090a">
+  <source media="(prefers-color-scheme: light)" srcset="https://github.com/user-attachments/assets/9f42d89c-d65c-4f1a-95d4-1b726dde89c6">
+  <img width="792" height="255" alt="image" src="https://github.com/user-attachments/assets/9f42d89c-d65c-4f1a-95d4-1b726dde89c6" />
 </picture>
 
 ### Interface
