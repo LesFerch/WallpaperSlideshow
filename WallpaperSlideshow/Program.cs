@@ -253,6 +253,10 @@ namespace WallpaperSlideshow
                     // Folders whose change notifications will be cleared after all monitors have been processed
                     HashSet<string> processedFolderChanges = new HashSet<string>(StringComparer.OrdinalIgnoreCase);
 
+                    // Cache of loaded (and possibly shuffled) image arrays keyed by folder path, so monitors
+                    // sharing the same folder with Shuffle+Sync enabled get an identical image order
+                    Dictionary<string, string[]> folderImageCache = new Dictionary<string, string[]>(StringComparer.OrdinalIgnoreCase);
+
                     for (uint i = 0; i < monitorCount; i++)
                     {
                         string monitorId;
@@ -291,12 +295,20 @@ namespace WallpaperSlideshow
                         {
                             if (!Directory.Exists(folder)) continue;
 
-                            monitorImages[monitorId] = Directory.GetFiles(folder).Where(IsImage).ToArray();
+                            // Use a cached array if this folder has already been loaded this iteration
+                            // (ensures Shuffle+Sync monitors share the same image order)
+                            if (!folderImageCache.ContainsKey(folder))
+                            {
+                                string[] loaded = Directory.GetFiles(folder).Where(IsImage).ToArray();
+                                if (Shuffle) ShuffleArray(loaded);
+                                folderImageCache[folder] = loaded;
+                            }
+
+                            monitorImages[monitorId] = folderImageCache[folder];
                             string[] images = monitorImages[monitorId];
 
                             if (images.Length > 0)
                             {
-                                if (Shuffle) ShuffleArray(images);
 
                                 int startIdx;
 
