@@ -2,7 +2,7 @@
 ; SEE THE DOCUMENTATION FOR DETAILS ON CREATING INNO SETUP SCRIPT FILES!
 
 #define MyAppName "WallpaperSlideshow"
-#define MyAppVersion "1.2.0"
+#define MyAppVersion "1.2.1"
 #define MyAppPublisher "LesFerch"
 #define MyAppURL "https://lesferch.github.io/WallpaperSlideshow/"
 #define MyAppExeName "WallpaperSlideshowUI.exe"
@@ -31,6 +31,8 @@ SetupIconFile={#MyAppName}.ico
 UninstallDisplayIcon={app}\{#MyAppExeName}
 CloseApplications=force
 RestartApplications=no
+SignedUninstaller=yes
+SignTool=Certum
 
 [Languages]
 Name: "english"; MessagesFile: "compiler:Default.isl"
